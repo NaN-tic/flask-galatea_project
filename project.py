@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, current_app, abort, g, \
     url_for, request, session, redirect, flash, jsonify, send_file
 from galatea.tryton import tryton
 from galatea.utils import slugify
-from galatea.helpers import login_required, customer_required, manager_required
+from galatea.helpers import login_required, customer_required
 from galatea.csrf import csrf
 from flask_babel import gettext as _, lazy_gettext, ngettext
 from flask_paginate import Pagination
@@ -35,7 +35,15 @@ def project_detail(lang, id):
     domain += Project.galatea_domain()
     projects = Project.search(domain, limit=1)
     if not projects:
-        abort(404)
+        if not session.get('logged_in'):
+            session['next'] = url_for('.project', lang=lang, id=id)
+            try:
+                url = url_for('portal.login', lang=lang)
+            except:
+                url = url_for('galatea.login', lang=lang)
+            return redirect(url)
+        else:
+            abort(404)
 
     project, = projects
 
