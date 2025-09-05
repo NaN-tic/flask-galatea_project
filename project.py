@@ -1,8 +1,7 @@
 from flask import Blueprint, render_template, current_app, abort, g, \
     url_for, request, session, redirect, flash, jsonify, send_file
-from galatea.tryton import tryton
+from app_extensions import tryton
 from galatea.helpers import login_required, customer_required
-from galatea.csrf import csrf
 from flask_babel import gettext as _, lazy_gettext, ngettext
 from flask_paginate import Pagination
 
@@ -10,17 +9,14 @@ project = Blueprint('project', __name__, template_folder='templates')
 
 DISPLAY_MSG = lazy_gettext('Displaying <b>{start} - {end}</b> of <b>{total}</b>')
 
-LIMIT = current_app.config.get('TRYTON_PAGINATION_PROJECT_LIMIT', 20)
-
-Project = tryton.pool.get('project.work')
-GalateaUser = tryton.pool.get('galatea.user')
-
 @project.route("/<int:id>", endpoint="project")
 @login_required
 @customer_required
 @tryton.transaction()
 def project_detail(lang, id):
     '''Project Detail'''
+    Project = tryton.pool.get('project.work')
+
     customer = session.get('customer')
     if not session.get('logged_in'):
         session.pop('customer', None)
@@ -67,6 +63,9 @@ def project_detail(lang, id):
 @tryton.transaction()
 def project_list(lang):
     '''Projects'''
+    LIMIT = current_app.config.get('TRYTON_PAGINATION_PROJECT_LIMIT', 20)
+
+    Project = tryton.pool.get('project.work')
 
     try:
         page = int(request.args.get('page', 1))
